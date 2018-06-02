@@ -1,0 +1,58 @@
+# Heat meter through digital seven segment LCD
+
+If you have a meter with a seven segment display, this guide explains how to add this to domoticz.
+
+## Hardware
+
+- Camera
+- Optional: USB light
+
+## Software
+
+### Test images / point camera
+
+raspistill --datetime -v -o cam_%d.jpg -t 0
+
+### Calibrate software
+
+use get_digits.py script: 
+./get_digits.py --calibrate
+
+or if you want to calibrate on an image taken previously
+./get_digits.py --calibrate <file>
+
+### Set up domoticz
+
+0. Set gas meter divisor to 1000 (not 100 as is standard)
+1. Create dummy hardware
+2. On this dummy hardware, create gas meter (Counter Incremental)
+2a. Set meter to gas type: utility -> edit -> Type: Gas
+2a. Set meter offset: utility -> edit -> Meter offset: <fill in>
+3. On this dummy hardware, create power meter (Electric (Instant+Counter)) -- N.B. Currently not supported because of JSON limitations
+3a. Set power meter to 'from device': utility -> edit -> "From device", otherwise the consumption is computed from the power
+4. Note down idx of two meters created
+5. Test updating meters manually using e.g. curl:
+5a. get data: curl -k "https://127.0.0.1:10443/json.htm?type=devices&rid=<idx>"
+5b. update power meter: https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"
+5c. update power meter: https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"
+5d. Once done with testing and you understand how domoticz meters work, delete and recreate meters to start off fresh
+6. Update get_digits script
+6a. Update meter idx
+6b. Update meter unit / type (e.g. gas / power), update conversion factors where necessary
+
+### Run script
+
+Add script to crontab -e, run e.g. every minute
+
+## Alternatives
+
+- https://github.com/jiweibo/SSOCR looks promising
+- https://www.unix-ag.uni-kl.de/~auerswal/ssocr/ is very sensitive to noise, didn't work for me
+- tesseract / character recognition is overkill given the simplicity of seven segment LCD
+- openCV's adaptive thresholding didn't work for me
+
+# References
+
+- https://www.pyimagesearch.com/2017/02/13/recognizing-digits-with-opencv-and-python
+- https://www.unix-ag.uni-kl.de/~auerswal/ssocr/
+- https://github.com/jiweibo/SSOCR
