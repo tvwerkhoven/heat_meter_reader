@@ -56,3 +56,6 @@ Add script to crontab -e, run e.g. every minute
 - https://www.pyimagesearch.com/2017/02/13/recognizing-digits-with-opencv-and-python
 - https://www.unix-ag.uni-kl.de/~auerswal/ssocr/
 - https://github.com/jiweibo/SSOCR
+- https://www.swarthmore.edu/NatSci/mzucker1/e27_s2016/install_opencv.html
+- https://github.com/arturaugusto/display_ocr
+- https://hackaday.com/2013/01/03/ocr-automatically-reads-a-power-meter/
