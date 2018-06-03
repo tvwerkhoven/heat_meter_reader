@@ -14,6 +14,7 @@
 # Based on https://www.pyimagesearch.com/2017/02/13/recognizing-digits-with-opencv-and-python/
 
 import io
+import os
 import sys
 import cv2
 import re
@@ -239,7 +240,7 @@ def calibrate_image(im_path, ndigit, roi=None, digwidth=None, segwidth=None, seg
 def capture_img(delay=2, method='data'):
     # Only import here, we don't have this lib on dev computer
     from picamera import PiCamera
-    logging.info("Acquiring image, method={}...".format(method))
+    logging.debug("Acquiring image, method={}...".format(method))
 
     if (method == 'data'):
         # Create the in-memory stream
@@ -272,7 +273,7 @@ def capture_img(delay=2, method='data'):
         return img_path, None
 
 def preproc_img(imgpath, image, roi, store_crop=False, debug=False):
-    logging.info("Pre-processing image")
+    logging.debug("Pre-processing image")
     if (not imgpath == None):
         # Read image from disk, select ROI, convert to grayscale
         image = cv2.imread(imgpath)
@@ -291,10 +292,17 @@ def preproc_img(imgpath, image, roi, store_crop=False, debug=False):
     blurred = cv2.GaussianBlur(gray, (int(warped.shape[0]*0.9), int(warped.shape[0]*0.9)), 0)
     norm = gray / blurred
     norm = cv2.normalize(norm, norm, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
     if (store_crop):
         # TODO: store to log directory, not just anywhere (defaults to 
         # homedir now)
-        cv2.imwrite('capture_crop_{}.jpg'.format(time.time()), norm)
+        try:
+            fname = 'capture_crop_{}.jpg'.format(time.time())
+            fpath = os.path.join(store_crop, fname)
+            cv2.imwrite(fpath, norm)
+        except Exception as inst:
+            logging.warn("Could not store crop: {}".format(inst))
+
 
     if (debug):
         plt.figure(110)
@@ -334,7 +342,7 @@ def preproc_img(imgpath, image, roi, store_crop=False, debug=False):
     return norm, thresh2
 
 def read_digits(img, ndigit, digwidth, segwidth, debug=False):
-    logging.info("Reading digits...")
+    logging.debug("Reading digits...")
     # img: pre-processed image
     # ndigit: number of digits (numbers) to extract
     # digwidth: width of one digit (without margin) in pixels
@@ -437,7 +445,7 @@ def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
     for off in range(ndigit*2):
         cand = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
         prob = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
-        logging.info("Trying candidate value {} with distance {}...".format(cand, prob))
+        logging.info("Found candidate value {} with distance {:.4}...".format(cand, prob))
         # Check if candidate number satisfies constraints
         if (cand >= minval and (not maxinc or cand < (minval + maxinc))):
             return cand
@@ -452,7 +460,7 @@ def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
 def domoticz_init(ip, port, meter_idx, prot="http"):
     # Get current water meter reading from domoticz, return meter_count_l
 
-    logging.info("Get current meter {} reading from domoticz".format(meter_idx))
+    logging.debug("Get meter {} reading from domoticz".format(meter_idx))
     
     # E.g. https://127.0.0.1:10443/json.htm?type=devices&rid=
     req_url = "{}://{}:{}/json.htm?type=devices&rid={}".format(prot, ip, port, meter_idx)
@@ -487,7 +495,7 @@ def domoticz_init(ip, port, meter_idx, prot="http"):
     last_t = datetime.strptime(last_str, '%Y-%m-%d %H:%M:%S')
     last_delay = datetime.now() - last_t
 
-    logging.info("Using {} as current reading (counter={}, offset={})...".format(count_l, count_str, offset_str))
+    logging.info("Meter {}: counter={}, offset={}, delay={}".format(meter_idx, count_l, offset_l, last_delay))
     return offset_l, count_l, last_delay
 
 def domoticz_update(value, prot='https', ip='127.0.0.1', port='443'):
@@ -508,9 +516,12 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443'):
     # We use an incremental meter, only update the value minus the count
     upd_val_millim3 = int(val_millim3 - m_count)
 
-    req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={}".format(prot, ip,port, m_idx, int(upd_val_millim3))
-    logging.info("Updating meter {} to value {}".format(m_idx, upd_val_millim3))
-    httpresponse = requests.get(req_url, verify=False)
+    if (upd_val_millim3 < 10):
+        logging.info("Not updating meter {}, value {} too small.".format(m_idx, upd_val_millim3))
+    else:
+        req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={}".format(prot, ip,port, m_idx, int(upd_val_millim3))
+        logging.info("Updating meter {} to value {}".format(m_idx, upd_val_millim3))
+        httpresponse = requests.get(req_url, verify=False)
 
     ## Update power in kWh and W
     ## This does not work (yet) because domoticz JSON api does not print in 
@@ -544,7 +555,7 @@ def main():
                         help='width of segment in pixels')
     parser.add_argument('--segthresh', type=float, metavar='T', default=0.35,
                         help='threshold value to consider segment filled or not, between 0 and 1')
-    parser.add_argument('--store_crop', action='store_true',
+    parser.add_argument('--store_crop', type=str, metavar='storedir',
                         help='store cropped, normalized image (e.g. for longer-term debugging)')
 
     parser.add_argument('--minval', type=int, default=0, metavar='N',
@@ -569,6 +580,10 @@ def main():
 
     if (args.debug):
         print (args)
+
+    if (not os.path.exists(args.store_crop)):
+        logging.warn("Store crop path does not exist, disabling.")
+        args.store_crop = None
 
     if (not args.calibrate):
         if (args.roi == None or args.digwidth == None or args.segwidth == None or args.segthresh == None):
