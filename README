@@ -7,6 +7,13 @@ If you have a meter with a seven segment display, this guide explains how to add
 - Camera
 - Optional: USB light
 
+### Units
+
+Meter units is in GJ, with 3 decimal digits (e.g. 271.199 GJ). Value we recognize is in MJ because we ignore the decimal point in OCR.
+Domoticz units are in m^3, with 2 decimal digits (e.g. 3581.92 m^3) -- internally might be stored with higher precision, again not visible through JSON api because of poor interface.
+
+Conversion unit is 13.20772 m^3 gas/GJ, resolution is 0.01 m^3 for total count or 0.001 m^3 for daily count. For electric energy, conversion would be 277.7777 kWh/GJ.
+
 ## Software
 
 ### Test images / point camera
