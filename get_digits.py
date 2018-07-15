@@ -505,19 +505,19 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443'):
     # meter), or 13.20772 m^3/GJ 
     # for kWh we have 277.7777 kWh/GJ
     val_MJ = value
-    val_Wh = val_MJ * 277.7777
     val_millim3 = val_MJ * 13.20772
-
-    ## Update gas in m^3
-    m_idx = 28
+    #val_Wh = val_MJ * 277.7777
 
     # Get current value and offset
+    m_idx = 28
     m_offs, m_count, m_delay = domoticz_init(ip, port, m_idx, prot)
     # We use an incremental meter, only update the value minus the count
     upd_val_millim3 = int(val_millim3 - m_count)
 
     if (upd_val_millim3 < 10):
         logging.info("Not updating meter {}, value {} too small.".format(m_idx, upd_val_millim3))
+    elif (upd_val_millim3 > 1000):
+        logging.info("Not updating meter {}, value {} too large.".format(m_idx, upd_val_millim3))
     else:
         req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={}".format(prot, ip,port, m_idx, int(upd_val_millim3))
         logging.info("Updating meter {} to value {}".format(m_idx, upd_val_millim3))
