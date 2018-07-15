@@ -581,7 +581,8 @@ def main():
     if (args.debug):
         print (args)
 
-    if (not os.path.exists(args.store_crop)):
+    # Check if path exists. args.store_crop is either None or a string
+    if (args.store_crop and (not os.path.exists(args.store_crop))):
         logging.warn("Store crop path does not exist, disabling.")
         args.store_crop = None
 
