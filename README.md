@@ -18,15 +18,17 @@ Conversion unit is 13.20772 m^3 gas/GJ, resolution is 0.01 m^3 for total count o
 
 ### Test images / point camera
 
-raspistill --datetime -v -o cam_%d.jpg -t 0
+    raspistill --datetime -v -o cam_%d.jpg -t 0
 
 ### Calibrate software
 
 use get_digits.py script: 
-./get_digits.py --calibrate
+
+    ./get_digits.py --calibrate
 
 or if you want to calibrate on an image taken previously
-./get_digits.py --calibrate <file>
+
+    ./get_digits.py --calibrate <file>
 
 ### Set up domoticz
 
@@ -39,13 +41,13 @@ or if you want to calibrate on an image taken previously
 3a. Set power meter to 'from device': utility -> edit -> "From device", otherwise the consumption is computed from the power
 4. Note down idx of two meters created
 5. Test updating meters manually using e.g. curl:
-5a. get data: curl -k "https://127.0.0.1:10443/json.htm?type=devices&rid=<idx>"
-5b. update power meter: https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"
-5c. update power meter: https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"
-5d. Once done with testing and you understand how domoticz meters work, delete and recreate meters to start off fresh
+   1. get data: curl -k "https://127.0.0.1:10443/json.htm?type=devices&rid=<idx>"
+   2. update power meter: https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"
+   3. update power meter: https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"
+   4. Once done with testing and you understand how domoticz meters work, delete and recreate meters to start off fresh
 6. Update get_digits script
-6a. Update meter idx
-6b. Update meter unit / type (e.g. gas / power), update conversion factors where necessary
+   1. Update meter idx
+   2. Update meter unit / type (e.g. gas / power), update conversion factors where necessary
 
 ### Run script
 
