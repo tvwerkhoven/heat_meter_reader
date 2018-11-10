@@ -35,15 +35,15 @@ or if you want to calibrate on an image taken previously
 0. Set gas meter divisor to 1000 (not 100 as is standard)
 1. Create dummy hardware
 2. On this dummy hardware, create gas meter (Counter Incremental)
-2a. Set meter to gas type: utility -> edit -> Type: Gas
-2a. Set meter offset: utility -> edit -> Meter offset: <fill in>
+   1. Set meter to gas type: utility -> edit -> Type: Gas
+   2. Set meter offset: utility -> edit -> Meter offset: <fill in>
 3. On this dummy hardware, create power meter (Electric (Instant+Counter)) -- N.B. Currently not supported because of JSON limitations
-3a. Set power meter to 'from device': utility -> edit -> "From device", otherwise the consumption is computed from the power
+   1. Set power meter to 'from device': utility -> edit -> "From device", otherwise the consumption is computed from the power
 4. Note down idx of two meters created
 5. Test updating meters manually using e.g. curl:
-   1. get data: curl -k "https://127.0.0.1:10443/json.htm?type=devices&rid=<idx>"
-   2. update power meter: https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"
-   3. update power meter: https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"
+   1. get data: `curl -k "https://127.0.0.1:10443/json.htm?type=devices&rid=<idx>"`
+   2. update power meter: `curl -k "https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"`
+   3. update power meter: `curl -k "https://127.0.0.1:10443/json.htm?type=command&param=udevice&idx=<idx>&svalue=<power in Watt>;<usage in Wh>"`
    4. Once done with testing and you understand how domoticz meters work, delete and recreate meters to start off fresh
 6. Update get_digits script
    1. Update meter idx
