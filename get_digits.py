@@ -258,8 +258,9 @@ def capture_img(delay=2, method='data'):
         # Create the in-memory stream
         stream = io.BytesIO()
         with PiCamera() as camera:
-            camera.resolution = (1920, 1080)
-            camera.framerate = 30
+            # TODO: how to run at native resolution?
+            camera.resolution = (2592, 1944)
+            camera.framerate = 15
             logging.debug("Camera warming up {}s...".format(delay))
             time.sleep(delay)
             camera.capture(stream, format='jpeg')
@@ -273,8 +274,9 @@ def capture_img(delay=2, method='data'):
     else:
         # Via file
         camera = PiCamera()
-        camera.resolution = (1920, 1080)
-        camera.framerate = 30
+        # TODO: how to run at native resolution?
+        camera.resolution = (2592, 1944)
+        camera.framerate = 15
 
         logging.debug("Camera warming up {}s...".format(delay))
         time.sleep(delay)
