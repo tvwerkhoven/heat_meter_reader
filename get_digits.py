@@ -33,6 +33,16 @@ try:
 except NameError:
    pass
 
+def rotateImage(image, angle):
+    """
+    From https://stackoverflow.com/a/9042907
+    Required because not all opencv versions have cv2.rotate
+    """
+    image_center = tuple(np.array(image.shape[1::-1]) / 2)
+    rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+    result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+    return result
+
 def kMeans(X, K, maxIters = 10):
     # from https://gist.github.com/bistaumanga/6023692
     # Take two random samples from array
@@ -115,7 +125,7 @@ def four_point_transform(image, pts):
 def calibrate_image(im_path, ndigit, rotate=None, roi=None, digwidth=None, segwidth=None, segthresh=None, debug=False):
     image = cv2.imread(im_path)
     if (rotate):
-        image = cv2.rotate(image, rotate)
+        image = rotateImage(image, rotate)
     opt_str = ""
 
     import pylab as plt
@@ -281,7 +291,7 @@ def preproc_img(imgpath, image, roi, rotate=None, store_crop=False, debug=False)
         image = cv2.imread(imgpath)
 
     if (rotate):
-        image = cv2.rotate(image, rotate)
+        image = rotateImage(image, rotate)
 
     warped = four_point_transform(image, roi)
     gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
@@ -599,14 +609,6 @@ def main():
     
     if (args.roi != None):
         args.roi = np.r_[args.roi].astype(int).reshape(-1,2)
-
-    if (args.rotate != None):
-        if (args.rotate <= 90):
-            args.rotate = cv2.ROTATE_90_CLOCKWISE
-        elif (args.rotate <= 180):
-            args.rotate = cv2.ROTATE_180
-        elif (args.rotate <= 270):
-            args.rotate = cv2.ROTATE_90_COUNTERCLOCKWISE
 
     # Run main program, either in calibration mode or in analysis mode
     if (args.calibrate):
