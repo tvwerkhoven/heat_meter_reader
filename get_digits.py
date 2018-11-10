@@ -112,8 +112,10 @@ def four_point_transform(image, pts):
     # return the warped image
     return warped
 
-def calibrate_image(im_path, ndigit, roi=None, digwidth=None, segwidth=None, segthresh=None, debug=False):
+def calibrate_image(im_path, ndigit, rotate=None, roi=None, digwidth=None, segwidth=None, segthresh=None, debug=False):
     image = cv2.imread(im_path)
+    if (rotate):
+        image = cv2.rotate(image, rotate)
     opt_str = ""
 
     import pylab as plt
@@ -140,7 +142,7 @@ def calibrate_image(im_path, ndigit, roi=None, digwidth=None, segwidth=None, seg
             roi = im_roi_tmp
             opt_str += "--roi {} ".format(im_roi_str)
     
-    img_norm, img_thresh = preproc_img(im_path, None, roi, debug=debug)
+    img_norm, img_thresh = preproc_img(im_path, None, roi, rotate=rotate, debug=debug)
 
     while not digwidth:
         plt.figure(100)
@@ -272,11 +274,14 @@ def capture_img(delay=2, method='data'):
         camera.capture(img_path, use_video_port=False)
         return img_path, None
 
-def preproc_img(imgpath, image, roi, store_crop=False, debug=False):
+def preproc_img(imgpath, image, roi, rotate=None, store_crop=False, debug=False):
     logging.debug("Pre-processing image")
+    # Read image from disk, select ROI, convert to grayscale
     if (not imgpath == None):
-        # Read image from disk, select ROI, convert to grayscale
         image = cv2.imread(imgpath)
+
+    if (rotate):
+        image = cv2.rotate(image, rotate)
 
     warped = four_point_transform(image, roi)
     gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
@@ -546,6 +551,8 @@ def main():
     parser.add_argument('--ndigit', type=int, metavar='N', required=True,
                         help='number of digits in the ROI')
 
+    parser.add_argument('--rotate', metavar='deg', type=int,
+                        help='rotation to apply (90, 180, 270)')
     parser.add_argument('--roi', metavar=('x0', 'y0', 'x1', 'y1', 'x2', 'y2',
                         'x3', 'y3'), type=int, nargs=8, 
                         help='corners of the ROI around the digits')
@@ -563,7 +570,7 @@ def main():
     parser.add_argument('--maxincrease', type=int, default=None, metavar='N',
                         help='maximum increase to accept (for incrementing counters)')
 
-    parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port"), required=True, default=None,
+    parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port"), default=None,
                         nargs=3, help='protocol (http/https), ip, port of domoticz server, e.g. "https 127.0.0.1 10443')
 
     parser.add_argument('--calibrate', type=str, metavar='camfile',
@@ -593,20 +600,27 @@ def main():
     if (args.roi != None):
         args.roi = np.r_[args.roi].astype(int).reshape(-1,2)
 
+    if (args.rotate != None):
+        if (args.rotate <= 90):
+            args.rotate = cv2.ROTATE_90_CLOCKWISE
+        elif (args.rotate <= 180):
+            args.rotate = cv2.ROTATE_180
+        elif (args.rotate <= 270):
+            args.rotate = cv2.ROTATE_90_COUNTERCLOCKWISE
 
     # Run main program, either in calibration mode or in analysis mode
     if (args.calibrate):
         try:
             im_path, img_data = capture_img(method='file')
-            opt_str = calibrate_image(im_path, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
+            opt_str = calibrate_image(im_path, rotate=args.rotate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, segthresh=args.segthresh, debug=args.debug)
         except:
-            opt_str = calibrate_image(arg.calibrate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
+            opt_str = calibrate_image(args.calibrate, rotate=args.rotate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, segthresh=args.segthresh, debug=args.debug)
 
         print("Calibrated args: {}".format(opt_str))
     else:
         im_path, img_data = capture_img(method='data')
 
-        img_norm, img_thresh = preproc_img(im_path, img_data, store_crop=args.store_crop, roi=args.roi, debug=args.debug)
+        img_norm, img_thresh = preproc_img(im_path, img_data, roi=args.roi, rotate=args.rotate, store_crop=args.store_crop, debug=args.debug)
         lcd_digit_levels = read_digits(img_thresh, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
         
         lcd_value = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxinc=args.maxincrease)
