@@ -614,6 +614,8 @@ def main():
 
     # Run main program, either in calibration mode or in analysis mode
     if (args.calibrate):
+        # Unset default for calibration
+        args.segthresh = None
         try:
             im_path, img_data = capture_img(method='file')
             opt_str = calibrate_image(im_path, rotate=args.rotate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, segthresh=args.segthresh, debug=args.debug)
