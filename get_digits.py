@@ -573,7 +573,7 @@ def main():
     parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port"), default=None,
                         nargs=3, help='protocol (http/https), ip, port of domoticz server, e.g. "https 127.0.0.1 10443')
 
-    parser.add_argument('--calibrate', type=str, metavar='camfile',
+    parser.add_argument('--calibrate', type=str, metavar='camfile', nargs="?",
                         help='calibrate parameters, either getting camera image directly (if possible), or using the referenced file')
 
     parser.add_argument('--logfile', type=str, metavar='path',
