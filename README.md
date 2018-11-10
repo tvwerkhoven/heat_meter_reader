@@ -16,6 +16,20 @@ Conversion unit is 13.20772 m^3 gas/GJ, resolution is 0.01 m^3 for total count o
 
 ## Software
 
+### Pre-requisities
+
+py27-requests, opencv-python
+
+On Mac (with MacPorts):
+
+    port install py27-pip py27-requests
+    sudo pip-2.7 install opencv-python
+
+
+On Debian/Ubuntu:
+
+    sudo apt install python-opencv
+
 ### Test images / point camera
 
     raspistill --datetime -v -o cam_%d.jpg -t 0
