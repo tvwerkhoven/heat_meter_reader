@@ -245,9 +245,9 @@ def calibrate_image(im_path, ndigit, rotate=None, roi=None, digwidth=None, segwi
             opt_str += "--segthresh {} ".format(seg_thresh_str)
 
     lcd_digit_levels = read_digits(img_thresh, ndigit, digwidth, segwidth, debug)
-    lcd_value = calc_value(lcd_digit_levels, segthresh)
+    lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh)
 
-    input("Got reading: {}, press any key to quit".format(lcd_value))
+    input("Got reading: {}, press any key to quit".format(lcd_value, lcd_probability))
 
     return opt_str
 
@@ -490,19 +490,21 @@ def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
         cand = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
         # Probability of this total match
         prob = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
-        logging.info("Found candidate value {} with distance {:.4}...".format(cand, prob))
+        logging.debug("Found candidate value {} with distance {:.4}...".format(cand, prob))
         
         # Check if candidate number satisfies numerical constraints
         if (cand >= minval and (not maxinc or cand < (minval + maxinc))):
-            return cand
+            return cand, prob
 
         # Candidate was not ok, update next most probable digit and retry
         cand_id[cand_id_next[0][off+ndigit]] = cand_id_next[1][off+ndigit]
     
     # If we exit the loop above we found no match that satisfies numerical constraints.
-    cand0 = sum([d[0]*10**(ndigit-i-1) for i, d in enumerate(digit_candidates)])
+    cand_id = ndigit*[0]
+    cand0 = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
+    prob0 = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
     logging.warning("Could not satisfy range constraints, returning most likly result {}...".format(cand0))
-    return cand0    
+    return cand0, prob0
 
 def domoticz_init(ip, port, meter_idx, prot="http"):
     # Get current water meter reading from domoticz, return meter_count_l
@@ -621,7 +623,7 @@ def main():
     parser.add_argument('--logfile', type=str, metavar='path',
                         help='log stuff here')
     parser.add_argument('--debug', action='store_true',
-                        help='show debug output')
+                        help='show debug output during prep_proc calibration')
 
     # Pre-process command-line arguments
     args = parser.parse_args()
@@ -654,15 +656,21 @@ def main():
 
         print("Calibrated args: {}".format(opt_str))
     else:
-        im_path, img_data = capture_img(method='data')
+        try:
+            im_path, img_data = capture_img(method='data')
+        except:
+            logging.error("Could not acquire image, aborting")
+            return
 
         img_norm, img_thresh = preproc_img(im_path, img_data, roi=args.roi, rotate=args.rotate, store_crop=args.store_crop, debug=args.debug)
         lcd_digit_levels = read_digits(img_thresh, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
         
-        lcd_value = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxinc=args.maxincrease)
+        lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxinc=args.maxincrease)
 
+        print("Found: {}, {}".format(lcd_value, lcd_probability))
         if (args.domoticz != None):
             domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], midx=args.domoticz[3])
+
 
 if __name__ == "__main__":
     main()
