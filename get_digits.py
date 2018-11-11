@@ -590,6 +590,25 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
     # logging.info("Updating meter {} to value {};{}".format(m_idx, upd_val_power, upd_val_Wh))
     # httpresponse = requests.get(req_url, verify=False)
 
+def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smarthome", query="energy,type=heat,device=landisgyr"):
+    """
+    Push update to influxdb with second precision
+    """
+
+    # Value is always in MJ (meter shows GJ with 3 decimal digits, we ignore 
+    # the digit, leaving value in MJ.
+    val_MJ = value
+    #val_millim3 = val_MJ * 13.20772
+    #val_Wh = val_MJ * 277.7777
+    
+    logging.info("Pushing value {:d} to influxdb".format(int(val_MJ)))
+
+    # Something like req_url = "http://localhost:8086/write?db=smarthometest&precision=s"
+    req_url = "{}://{}:{}/write?db={}&precision=s".format(prot, ip, port, db)
+    # Something like post_data = "energy,type=heat,device=landisgyr value=10"
+    post_data = "{} value={:d}".format(query, int(val_MJ))
+    httpresponse = requests.post(req_url, data=post_data, verify=False)
+
 def main():
     parser = argparse.ArgumentParser(description='Read seven-segment LCD display.')
     parser.add_argument('--ndigit', type=int, metavar='N', required=True,
@@ -615,7 +634,9 @@ def main():
                         help='maximum increase to accept (for incrementing counters)')
 
     parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port", "idx"), default=None,
-                        nargs=4, help='protocol (http/https), ip, port, and meter idx of domoticz server, e.g. "https 127.0.0.1 10443 24')
+                        nargs=4, help='Push to domoticz: protocol (http/https), ip, port, and meter idx, e.g. "https 127.0.0.1 10443 24')
+    parser.add_argument('--influxdb', type=str, metavar=("protocol","ip","port","db", "query"), default=None,
+                        nargs=5, help='Push to influxdb: protocol (http/https), ip, port, database, and query start, e.g. "https 127.0.0.1 8086 smarthome energy,type=heat,device=landisgyr')
 
     parser.add_argument('--calibrate', type=str, metavar='camfile', nargs="?",
                         help='calibrate parameters, either getting camera image directly (if possible), or using the referenced file')
@@ -670,6 +691,8 @@ def main():
         print("Found: {}, {}".format(lcd_value, lcd_probability))
         if (args.domoticz != None):
             domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], midx=args.domoticz[3])
+        if (args.influxdb != None):
+            influxdb_update(lcd_value, prot=args.influxdb[0], ip=args.influxdb[1], port=args.influxdb[2], db=args.influxdb[3], measurement=args.influxdb[3])
 
 
 if __name__ == "__main__":
