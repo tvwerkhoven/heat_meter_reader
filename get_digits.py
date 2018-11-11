@@ -545,7 +545,7 @@ def domoticz_init(ip, port, meter_idx, prot="http"):
     logging.info("Meter {}: counter={}, offset={}, delay={}".format(meter_idx, count_l, offset_l, last_delay))
     return offset_l, count_l, last_delay
 
-def domoticz_update(value, prot='https', ip='127.0.0.1', port='443'):
+def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None):
     # Value is always in MJ (meter shows GJ with 3 decimal digits, we ignore 
     # the digit, leaving value in MJ. Domoticz meters are in kWh and m^3 gas
     # For heat, we have 3581.92 m^3 == 271.199 GJ (according to our own 
@@ -556,7 +556,7 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443'):
     #val_Wh = val_MJ * 277.7777
 
     # Get current value and offset
-    m_idx = 28
+    #m_idx = 28
     m_offs, m_count, m_delay = domoticz_init(ip, port, m_idx, prot)
     # We use an incremental meter, only update the value minus the count
     upd_val_millim3 = int(val_millim3 - m_count)
@@ -612,8 +612,8 @@ def main():
     parser.add_argument('--maxincrease', type=int, default=None, metavar='N',
                         help='maximum increase to accept (for incrementing counters)')
 
-    parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port"), default=None,
-                        nargs=3, help='protocol (http/https), ip, port of domoticz server, e.g. "https 127.0.0.1 10443')
+    parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port", "idx"), default=None,
+                        nargs=4, help='protocol (http/https), ip, port, and meter idx of domoticz server, e.g. "https 127.0.0.1 10443 24')
 
     parser.add_argument('--calibrate', type=str, metavar='camfile', nargs="?",
                         help='calibrate parameters, either getting camera image directly (if possible), or using the referenced file')
@@ -660,8 +660,9 @@ def main():
         lcd_digit_levels = read_digits(img_thresh, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
         
         lcd_value = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxinc=args.maxincrease)
-        
-        domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2])
+
+        if (args.domoticz != None):
+            domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], midx=args.domoticz[3])
 
 if __name__ == "__main__":
     main()
