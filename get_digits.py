@@ -690,7 +690,7 @@ def main():
 
         print("Found: {}, {}".format(lcd_value, lcd_probability))
         if (args.domoticz != None):
-            domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], midx=args.domoticz[3])
+            domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], m_idx=args.domoticz[3])
         if (args.influxdb != None):
             influxdb_update(lcd_value, prot=args.influxdb[0], ip=args.influxdb[1], port=args.influxdb[2], db=args.influxdb[3], query=args.influxdb[4])
 
