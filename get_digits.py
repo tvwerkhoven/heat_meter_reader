@@ -26,6 +26,8 @@ import time
 import argparse
 import logging
 
+from IPython import embed;
+
 
 # Python2/3 compatibility
 try:
@@ -423,7 +425,12 @@ def read_segments(digit_img, segwidth, debug=False):
     return seg_level
     
 def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
-    # Given intensity levels of all segments, calculate most likely value.
+    """
+    Given intensity levels of all segments, calculate most likely value
+    per digit for the whole number.
+    """
+
+    # This is what the seven segments look like for each number
     DIGITS_MATCH = np.r_[
         # 0  1  2  3  4  5  6
         [[1, 1, 1, 0, 1, 1, 1]], # 0
@@ -439,37 +446,60 @@ def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
     ]
     ndigit = len(digit_levels)
 
-    # Calculate distance/mismatch to each number. Lowest value is highest 
-    # chance
+    # Per digit, we have the intensity level for each segment. We calculate the 
+    # difference of these segment intensities with all the template value (DIGITS_MATCH).
+    # The lower the difference, the better the match and the more likely this digit
+    # has a specific value.
     digit_dist = [] 
     digit_candidates = []
     for digit_level_v in digit_levels:
+        # Squared difference distance as matrix, then sum over segments
         c = (((DIGITS_MATCH*2*segthresh) - digit_level_v)**2.0).sum(1)
+        # The index of a match is also the digit. If we sort the argsort the distance 
+        # array, we get a list of digit candidates
         c_ord = np.argsort(c)
-        #print(c_ord, c_ord[0], c[c_ord[1]] - c[c_ord[0]])
+        
         digit_dist.append(list(c[c_ord]))
         digit_candidates.append(list(c_ord))
 
-    # Order next highest likely digit per location
+    # Flatten list of digit candidates, ordered by probability, and paired with digit index
     digit_dist = np.r_[digit_dist]
     cand_id_next = np.unravel_index(np.argsort(digit_dist, axis=None), digit_dist.shape)
 
-    # Always select the first candidate for each digit (we need one digit 
-    # per location)
+    # The most likely match per digit might not be the best match overall. We 
+    # check a range of possible numbers below that might satisfy higher-level
+    # numerical constraints.
+
+    # Example for 3 digits: 
+    # Try candidate [0,0,0] first, which has digits 
+    # d0=digit_candidates[0][0], d1=digit_candidates[1][0], d2=digit_candidates[2][0]
+    # The probability of this number is:
+    # digit_dist[0][0] + digit_dist[1][0] + digit_dist[2][0]
+    # The value of which is
+    # v = d0*10^2 + d1*10^1 + d0*10^0
+    #
+    # If v is not ok numerically, try the second candidate, which might be
+    # [0, 0, 1], i.e. use the second match for the third digit (from cand_id_next)
+
+    # We try the most likely digit candidate first (which has index 0)
     cand_id = ndigit*[0]
     
     # Try 2 candidates for each digit (i.e. 14 for 7 digit display)
     for off in range(ndigit*2):
+        # Build numerical value from digit candidates for the first candidate
         cand = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
+        # Probability of this total match
         prob = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
         logging.info("Found candidate value {} with distance {:.4}...".format(cand, prob))
-        # Check if candidate number satisfies constraints
+        
+        # Check if candidate number satisfies numerical constraints
         if (cand >= minval and (not maxinc or cand < (minval + maxinc))):
             return cand
 
         # Candidate was not ok, update next most probable digit and retry
         cand_id[cand_id_next[0][off+ndigit]] = cand_id_next[1][off+ndigit]
     
+    # If we exit the loop above we found no match that satisfies numerical constraints.
     cand0 = sum([d[0]*10**(ndigit-i-1) for i, d in enumerate(digit_candidates)])
     logging.warning("Could not satisfy range constraints, returning most likly result {}...".format(cand0))
     return cand0    
@@ -630,6 +660,7 @@ def main():
         lcd_digit_levels = read_digits(img_thresh, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
         
         lcd_value = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxinc=args.maxincrease)
+        
         domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2])
 
 if __name__ == "__main__":
