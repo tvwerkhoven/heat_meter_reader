@@ -26,7 +26,7 @@ import time
 import argparse
 import logging
 
-from IPython import embed;
+#from IPython import embed;
 
 
 # Python2/3 compatibility
@@ -487,7 +487,10 @@ def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
     # Try 2 candidates for each digit (i.e. 14 for 7 digit display)
     for off in range(ndigit*2):
         # Build numerical value from digit candidates for the first candidate
-        cand = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
+        # N.B. Important: convert to int() first which can support arbitrarily large 
+        # values, else the numpy default (int32) is used and we overflow above 
+        # log10(2**31) = 10 digits
+        cand = sum([int(digit_candidates[i][c])*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
         # Probability of this total match
         prob = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
         logging.debug("Found candidate value {} with distance {:.4}...".format(cand, prob))
