@@ -593,20 +593,18 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
 def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smarthome", query="energy,type=heat,device=landisgyr"):
     """
     Push update to influxdb with second precision
-    """
 
-    # Value is always in MJ (meter shows GJ with 3 decimal digits, we ignore 
-    # the digit, leaving value in MJ.
-    val_MJ = value
-    #val_millim3 = val_MJ * 13.20772
-    #val_Wh = val_MJ * 277.7777
+    Value is in MJ (meter shows GJ with 3 decimal digits, we ignore 
+    the digit, leaving value in MJ). We convert to Joule to get SI in influxdb
+    """
+    value_joule = value*1000000
     
-    logging.info("Pushing value {:d} to influxdb".format(int(val_MJ)))
+    logging.info("Pushing value {:d} to influxdb".format(int(value_joule)))
 
     # Something like req_url = "http://localhost:8086/write?db=smarthometest&precision=s"
     req_url = "{}://{}:{}/write?db={}&precision=s".format(prot, ip, port, db)
     # Something like post_data = "energy,type=heat,device=landisgyr value=10"
-    post_data = "{} value={:d}".format(query, int(val_MJ))
+    post_data = "{} value={:d}".format(query, int(value_joule))
     httpresponse = requests.post(req_url, data=post_data, verify=False)
 
 def main():
