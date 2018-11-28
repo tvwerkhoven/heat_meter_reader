@@ -517,18 +517,15 @@ def domoticz_init(ip, port, meter_idx, prot="http"):
     # E.g. https://127.0.0.1:10443/json.htm?type=devices&rid=
     req_url = "{}://{}:{}/json.htm?type=devices&rid={}".format(prot, ip, port, meter_idx)
 
-    # Try a few times in case domoticz has not started yet. We give domoticz 
-    # 10*10 seconds (±2 minutes) to start
-    for i in range(10):
-        try:
-            resp = requests.get(req_url, verify=False)
-            break
-        except Exception as inst:
-            logging.warn("Could not get current meter reading: {}. Will retry in 10sec. ({}/{})".format(inst, i, 10))
-            time.sleep(10)
-            if (i == 9):
-                logging.warn("Could not get current meter reading. Failing.")
-                raise
+    try:
+        resp = requests.get(req_url, verify=False, timeout=5)
+        break
+    except requests.exceptions.Timeout as inst:
+        logging.error("Could not get current meter reading due to timeout: {}, failing".format(inst))
+        raise
+    except Exception as inst:
+        logging.error("Could not get current meter reading: {}, failing".format(inst))
+        raise
 
     # Get meter offset ('AddjValue'), given as float
     offset_str = resp.json()['result'][0]['AddjValue'] # like '13.456'
@@ -573,7 +570,10 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
     else:
         req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={}".format(prot, ip,port, m_idx, int(upd_val_millim3))
         logging.info("Updating meter {} to value {}".format(m_idx, upd_val_millim3))
-        httpresponse = requests.get(req_url, verify=False)
+        try:
+            httpresponse = requests.get(req_url, verify=False, timeout=5)
+        except requests.exceptions.Timeout as inst:
+            logging.warn("Could not update meter reading due to timeout: {}, failing".format(inst))
 
     ## Update power in kWh and W
     ## This does not work (yet) because domoticz JSON api does not print in 
@@ -591,7 +591,7 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
 
     # req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={};{}".format(prot, ip,port, m_idx, int(upd_val_power), int(upd_val_Wh))
     # logging.info("Updating meter {} to value {};{}".format(m_idx, upd_val_power, upd_val_Wh))
-    # httpresponse = requests.get(req_url, verify=False)
+    # httpresponse = requests.get(req_url, verify=False, timeout=5)
 
 def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smarthome", query="energy,type=heat,device=landisgyr"):
     """
@@ -608,7 +608,11 @@ def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smartho
     req_url = "{}://{}:{}/write?db={}&precision=s".format(prot, ip, port, db)
     # Something like post_data = "energy,type=heat,device=landisgyr value=10"
     post_data = "{} value={:d}".format(query, int(value_joule))
-    httpresponse = requests.post(req_url, data=post_data, verify=False)
+    try:
+        httpresponse = requests.post(req_url, data=post_data, verify=False, timeout=5)
+    except requests.exceptions.Timeout as inst:
+        logging.warn("Could not update meter reading due to timeout: {}, failing".format(inst))
+        pass
 
 def main():
     parser = argparse.ArgumentParser(description='Read seven-segment LCD display.')
