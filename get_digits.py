@@ -567,7 +567,7 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
         logging.info("Not updating meter {}, value {} too small for domoticz resolution.".format(m_idx, upd_val_millim3))
     # Rate limit to max 1 GJ/day to prevent wrong reads = val_MJ > 1000*m_delay.total_seconds()/3600/24
     elif (val_MJ > 1000*m_delay.total_seconds()/3600/24):
-        logging.info("Not updating meter {}, value {} too large.".format(m_idx, upd_val_millim3))
+        logging.info("Not updating meter {}, value {} > {}.".format(m_idx, val_MJ, 1000*m_delay.total_seconds()/3600/24))
     else:
         req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={}".format(prot, ip,port, m_idx, int(upd_val_millim3))
         logging.info("Updating meter {} to value {}".format(m_idx, upd_val_millim3))
