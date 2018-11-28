@@ -565,9 +565,9 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
     # Do not update domoticz below 10 units because of domoticz resolution being too small, causing flip flopping updates
     if (upd_val_millim3 < 10):
         logging.info("Not updating meter {}, value {} too small for domoticz resolution.".format(m_idx, upd_val_millim3))
-    # Rate limit to max 1 GJ/day to prevent wrong reads = val_MJ > 1000*m_delay.total_seconds()/3600/24
-    elif (val_MJ > 1000*m_delay.total_seconds()/3600/24):
-        logging.info("Not updating meter {}, value {} > {}.".format(m_idx, val_MJ, 1000*m_delay.total_seconds()/3600/24))
+    # Rate limit to max 2 GJ/day = 25 m^3/day to prevent wrong reads = val_MJ > 1000*m_delay.total_seconds()/3600/24
+    elif (upd_val_millim3 > 25*m_delay.total_seconds()/3600/24):
+        logging.info("Not updating meter {}, value {} > {}.".format(m_idx, upd_val_millim3, 25*m_delay.total_seconds()/3600/24))
     else:
         req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={}".format(prot, ip,port, m_idx, int(upd_val_millim3))
         logging.info("Updating meter {} to value {}".format(m_idx, upd_val_millim3))
