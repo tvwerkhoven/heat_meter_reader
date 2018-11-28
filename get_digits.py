@@ -519,7 +519,6 @@ def domoticz_init(ip, port, meter_idx, prot="http"):
 
     try:
         resp = requests.get(req_url, verify=False, timeout=5)
-        break
     except requests.exceptions.Timeout as inst:
         logging.error("Could not get current meter reading due to timeout: {}, failing".format(inst))
         raise
