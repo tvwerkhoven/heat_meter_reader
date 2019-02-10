@@ -594,7 +594,7 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
     # logging.info("Updating meter {} to value {};{}".format(m_idx, upd_val_power, upd_val_Wh))
     # httpresponse = requests.get(req_url, verify=False, timeout=5)
 
-def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smarthome", query="energy,type=heat,device=landisgyr"):
+def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smarthome", query="energy,type=heat,device=landisgyr value="):
     """
     Push update to influxdb with second precision
 
@@ -603,12 +603,14 @@ def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smartho
     """
     value_joule = value*1000000
     
-    logging.info("Pushing value {:d} to influxdb".format(int(value_joule)))
-
     # Something like req_url = "http://localhost:8086/write?db=smarthometest&precision=s"
     req_url = "{}://{}:{}/write?db={}&precision=s".format(prot, ip, port, db)
     # Something like post_data = "energy,type=heat,device=landisgyr value=10"
-    post_data = "{} value={:d}".format(query, int(value_joule))
+    # Alternatively, like post_data = "energy landisgyr=10"
+    post_data = "{}{:d}".format(query, int(value_joule))
+
+    logging.info("Pushing data '{}' to influxdb".format(post_data))
+
     try:
         httpresponse = requests.post(req_url, data=post_data, verify=False, timeout=5)
     except requests.exceptions.Timeout as inst:
@@ -642,7 +644,10 @@ def main():
     parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port", "idx"), default=None,
                         nargs=4, help='Push to domoticz: protocol (http/https), ip, port, and meter idx, e.g. "https 127.0.0.1 10443 24')
     parser.add_argument('--influxdb', type=str, metavar=("protocol","ip","port","db", "query"), default=None,
-                        nargs=5, help='Push to influxdb: protocol (http/https), ip, port, database, and query start, e.g. "https 127.0.0.1 8086 smarthome energy,type=heat,device=landisgyr')
+                        nargs=5, help='Push to influxdb: protocol (http/https), \
+                        ip, port, database, and query string which will be \
+                        appended with the measurement data, e.g. \
+                        "https 127.0.0.1 8086 smarthome "energy,type=heat,device=landisgyr value=""')
 
     parser.add_argument('--calibrate', type=str, metavar='camfile', nargs="?",
                         help='calibrate parameters, either getting camera image directly (if possible), or using the referenced file')
