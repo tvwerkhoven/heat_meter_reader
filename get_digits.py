@@ -199,15 +199,17 @@ def calibrate_image(im_path, ndigit, rotate=None, roi=None, digwidth=None, segwi
         dM = dH = dW = seg_width_tmp
         dHC = dW//2
         w, h = digwidth, img_thresh.shape[0]
-        segments = [
-            ((dM, 0), (w-2*dM, dH))         # top
-            ,((0, dM), (dW, (h // 2)-2*dM))         # top-left
-            ,((w - dW, dM), (dW, (h // 2)-2*dM))    # top-right
-            ,((dM, (h // 2) - dHC) , (w-2*dM, dH)) # center
-            ,((0, (h // 2)+dM), (dW, (h//2)-2*dM))         # bottom-left
-            ,((w - dW, (h // 2)+dM), (dW, (h//2)-2*dM))    # bottom-right
-            ,((dM, h - dH), (w-2*dM, dH))         # bottom
-        ]
+
+        segments = calc_seg_coordinates(w,h,seg_width_tmp)
+        #     [
+        #     ((dM, 0), (w-2*dM, dH))                 # top
+        #     ,((0, dM), (dW, (h // 2)-int(1.5*dM)))         # top-left
+        #     ,((w - dW, dM), (dW, (h // 2)-int(1.5*dM)))    # top-right
+        #     ,((dM, (h // 2) - dHC) , (w-2*dM, dH))  # center
+        #     ,((0, (h // 2)+int(0.5*dM)), (dW, (h//2)-int(1.5*dM)))  # bottom-left
+        #     ,((w - dW, (h // 2)+int(0.5*dM)), (dW, (h//2)-int(1.5*dM)))    # bottom-right
+        #     ,((dM, h - dH), (w-2*dM, dH))           # bottom
+        # ]
 
         for i in range(ndigit):
             xdig = i*(digwidth+dig_margin)
@@ -395,6 +397,21 @@ def read_digits(img, ndigit, digwidth, segwidth, debug=False):
     
     return digit_levels
 
+def calc_seg_coordinates(digitw, digith, segwidth):
+    w, h = digitw, digith
+    dM = dH = dW = segwidth
+    dHC = dW//2
+
+    return [
+        ((dM, 0), (w-2*dM, dH)),                 # top
+        ((0, dM), (dW, (h // 2)-int(1.5*dM))),   # top-left
+        ((w - dW, dM), (dW, (h // 2)-int(1.5*dM))),    # top-right
+        ((dM, (h // 2) - dHC) , (w-2*dM, dH)),  # center
+        ((0, (h // 2)+int(0.5*dM)), (dW, (h//2)-int(1.5*dM))),  # bottom-left
+        ((w - dW, (h // 2)+int(0.5*dM)), (dW, (h//2)-int(1.5*dM))),    # bottom-right
+        ((dM, h - dH), (w-2*dM, dH))           # bottom
+    ]
+
 def read_segments(digit_img, segwidth, debug=False):
     # Given an image of a digit, and segwidth in pixels, return segment 
     # states
@@ -403,15 +420,16 @@ def read_segments(digit_img, segwidth, debug=False):
     dM = dH = dW = segwidth
     dHC = dW//2
     w, h = digit_img.shape[1], digit_img.shape[0]
-    segments = [
-        ((dM, 0), (w-2*dM, dH))         # top
-        ,((0, dM), (dW, (h // 2)-2*dM))         # top-left
-        ,((w - dW, dM), (dW, (h // 2)-2*dM))    # top-right
-        ,((dM, (h // 2) - dHC) , (w-2*dM, dH)) # center
-        ,((0, (h // 2)+dM), (dW, (h//2)-2*dM))         # bottom-left
-        ,((w - dW, (h // 2)+dM), (dW, (h//2)-2*dM))    # bottom-right
-        ,((dM, h - dH), (w-2*dM, dH))         # bottom
-    ]
+    segments = calc_seg_coordinates(w,h,segwidth)
+    # [
+    #     ((dM, 0), (w-2*dM, dH))                 # top
+    #     ,((0, dM), (dW, (h // 2)-1*dM))         # top-left
+    #     ,((w - dW, dM), (dW, (h // 2)-1*dM))    # top-right
+    #     ,((dM, (h // 2) - dHC) , (w-2*dM, dH))  # center
+    #     ,((0, (h // 2)+dM), (dW, (h//2)-1*dM))  # bottom-left
+    #     ,((w - dW, (h // 2)+dM), (dW, (h//2)-1*dM))    # bottom-right
+    #     ,((dM, h - dH), (w-2*dM, dH))           # bottom
+    # ]
     
     seg_level = []
     for (i, ((xA, yA), (xlen, ylen))) in enumerate(segments):
