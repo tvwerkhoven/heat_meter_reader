@@ -535,7 +535,9 @@ def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
         # Candidate was not ok, update next most probable digit and retry
         cand_id[cand_id_next[0][off+ndigit]] = cand_id_next[1][off+ndigit]
     
-    # If we exit the loop above we found no match that satisfies numerical constraints.
+    # If we exit the loop above we found no match that satisfies numerical 
+    # constraints (not good!). Try to salvage by returning most likely 
+    # candidate
     cand_id = ndigit*[0]
     cand0 = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
     prob0 = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
@@ -670,9 +672,9 @@ def main():
                         help='store cropped, normalized image (e.g. for longer-term debugging)')
 
     parser.add_argument('--minval', type=int, default=0, metavar='N',
-                        help='minimum value to accept (for incrementing counters)')
+                        help='minimum value to accept (e.g. for incrementing counters)')
     parser.add_argument('--maxincrease', type=int, default=None, metavar='N',
-                        help='maximum increase to accept (for incrementing counters)')
+                        help='maximum increase to accept (e.g. for incrementing counters)')
 
     parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port", "idx"), default=None,
                         nargs=4, help='Push to domoticz: protocol (http/https), ip, port, and meter idx, e.g. "https 127.0.0.1 10443 24')
