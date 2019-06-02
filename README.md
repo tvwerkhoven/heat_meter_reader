@@ -63,9 +63,17 @@ or if you want to calibrate on an image taken previously
    1. Update meter idx
    2. Update meter unit / type (e.g. gas / power), update conversion factors where necessary
 
+### Set up influxdb
+
+Not covered here
+
+curl -G 'http://localhost:8086/query?db=smarthome' --data-urlencode 'q=DELETE FROM energyv2 WHERE time=\'$i\''
+
 ### Run script
 
-Add script to crontab -e, run e.g. every minute
+Add script to crontab -e, run e.g. every minute:
+
+    */2 * * * * ./get_digits.py  --rotate 180 --ndigit 7 --roi 739 703 1487 699 1497 537 757 544 --digwidth 90 --segwidth 30 --segthresh 0.3 --domoticz https 127.0.0.1 10443 28 --influxdb http 127.0.0.1 8086 database "measurement value="
 
 ## Alternatives
 
