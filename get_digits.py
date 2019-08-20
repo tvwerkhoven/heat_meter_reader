@@ -49,7 +49,7 @@ def kMeans(X, K, maxIters = 10):
     # from https://gist.github.com/bistaumanga/6023692
     # Take two random samples from array
     centroids = X[np.random.choice(np.arange(len(X)), K)]
-
+ 
     for i in range(maxIters):
         # Cluster Assignment step
         C = np.array([np.argmin([np.dot(x_i-y_k, x_i-y_k) for y_k in centroids]) for x_i in X])
@@ -558,8 +558,8 @@ def domoticz_init(ip, port, meter_idx, prot="http"):
         logging.error("Could not get current meter reading due to timeout: {}, failing".format(inst))
         raise
     except Exception as inst:
-        logging.error("Could not get current meter reading: {}, failing".format(inst))
-        raise
+        logging.error("Could not get current meter reading: {}".format(inst))
+        return 0,0,datetime.now()-datetime.now()
 
     # Get meter offset ('AddjValue'), given as float
     offset_str = resp.json()['result'][0]['AddjValue'] # like '13.456'
@@ -585,7 +585,7 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
     # Value is always in MJ (meter shows GJ with 3 decimal digits, we ignore 
     # the digit, leaving value in MJ. Domoticz meters are in kWh and m^3 gas
     # For heat, we have 3581.92 m^3 == 271.199 GJ (according to our own 
-    # meter), or 13.20772 m^3/GJ 
+    # meter), or 13.20772 m^3/GJ -- THIS IS VERY WRONG! Probably measures water flow, not gas equivalent!
     # for kWh we have 277.7777 kWh/GJ
     val_MJ = value
     val_millim3 = val_MJ * 13.20772
@@ -610,6 +610,8 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
             httpresponse = requests.get(req_url, verify=False, timeout=5)
         except requests.exceptions.Timeout as inst:
             logging.warn("Could not update meter reading due to timeout: {}, failing".format(inst))
+        except Exception as inst:
+            logging.error("Could not update meter reading: {}".format(inst))
 
     ## Update power in kWh and W
     ## This does not work (yet) because domoticz JSON api does not print in 
@@ -648,8 +650,8 @@ def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smartho
 
     try:
         httpresponse = requests.post(req_url, data=post_data, verify=False, timeout=5)
-    except requests.exceptions.Timeout as inst:
-        logging.warn("Could not update meter reading due to timeout: {}, failing".format(inst))
+    except Exception as inst:
+        logging.warn("Could not update meter reading: {}".format(inst))
         pass
 
 def main():
