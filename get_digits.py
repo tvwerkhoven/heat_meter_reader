@@ -264,7 +264,7 @@ def calibrate_image(im_path, ndigit, rotate=None, roi=None, digwidth=None, segwi
     lcd_digit_levels = read_digits(img_thresh, ndigit, digwidth, segwidth, debug)
     lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh)
 
-    input("Got reading: {}, press any key to quit".format(lcd_value, lcd_probability))
+    input("Got reading: {} @ probability {}, press any key to quit".format(lcd_value, lcd_probability))
 
     return opt_str
 
@@ -541,7 +541,7 @@ def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
     cand_id = ndigit*[0]
     cand0 = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
     prob0 = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
-    logging.warning("Could not satisfy range constraints, returning most likly result {}...".format(cand0))
+    logging.warning("Could not satisfy range constraints, returning most likely result {}...".format(cand0))
     return cand0, prob0
 
 def domoticz_init(ip, port, meter_idx, prot="http"):
@@ -715,8 +715,8 @@ def main():
 
     # Run main program, either in calibration mode or in analysis mode
     if (args.calibrate):
-        # Unset default for calibration
-        args.segthresh = None
+        # Unset default for calibration -- 20200202 -- removed, not sure why we set this default
+        # args.segthresh = None
         try:
             im_path, img_data = capture_img(method='file')
             opt_str = calibrate_image(im_path, rotate=args.rotate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, segthresh=args.segthresh, debug=args.debug)
