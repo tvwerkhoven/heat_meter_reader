@@ -25,7 +25,6 @@ On Mac (with MacPorts):
     port install py27-pip py27-requests
     sudo pip-2.7 install opencv-python
 
-
 On Debian/Ubuntu:
 
     sudo apt install python-opencv
@@ -42,7 +41,15 @@ use get_digits.py script:
 
 or if you want to calibrate on an image taken previously
 
-    ./get_digits.py --calibrate <file>
+    raspistill --datetime -v -o cam_%d.jpg -t 0
+    ./get_digits.py --rotate 180 --ndigit 7 --calibrate cam_*.jpg
+
+Get paramters:
+    --roi 761 907 1494 901 1502 748 784 744
+    --digwidth 80
+    --segwidth 25
+    --segthresh 0.25
+
 
 ### Set up domoticz
 
