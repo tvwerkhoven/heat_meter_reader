@@ -533,6 +533,7 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
             return cand, prob
 
         # Candidate was not ok, update next most probable digit and retry
+        logging.warning("Skipping NOK candidate value {} with distance {:.4}...".format(cand, prob))
         cand_id[cand_id_next[0][off+ndigit]] = cand_id_next[1][off+ndigit]
     
     # If we exit the loop above we found no match that satisfies numerical 
