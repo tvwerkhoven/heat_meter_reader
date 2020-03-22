@@ -533,7 +533,7 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
             return cand, prob
 
         # Candidate was not ok, update next most probable digit and retry
-        logging.warning("Skipping NOK candidate value {} with distance {:.4}...".format(cand, prob))
+        logging.warning("Skipping candidate value {} with distance {:.4}...".format(cand, prob))
         cand_id[cand_id_next[0][off+ndigit]] = cand_id_next[1][off+ndigit]
     
     # If we exit the loop above we found no match that satisfies numerical 
@@ -723,6 +723,11 @@ def main():
     # Pre-process command-line arguments
     args = parser.parse_args()
     logging.basicConfig(filename=args.logfile, level=logging.INFO, format='%(asctime)s %(message)s')
+    # define a Handler which writes INFO messages or higher to the sys.stderr
+    console = logging.StreamHandler()
+    console.setLevel(logging.DEBUG)
+    # add the handler to the root logger
+    logging.getLogger('').addHandler(console)
 
     if (args.debug):
         print (args)
