@@ -764,7 +764,7 @@ def main():
         lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxval=lastval+args.maxincrease)
         set_last_val(lcd_value, args.lastvalfile)
 
-        print("Found: {}, {}".format(lcd_value, lcd_probability))
+        logging.info("Found: {}, {}".format(lcd_value, lcd_probability))
         if (args.domoticz != None):
             domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], m_idx=args.domoticz[3])
         if (args.influxdb != None):
