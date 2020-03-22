@@ -668,10 +668,14 @@ def get_last_val(filepath):
 
 def set_last_val(value, filepath):
     """
-    Set last value and timestamp to file
+    Set last value and timestamp to file, do not crash if file doesn't exist 
+    or otherwise
     """
-    with open(filepath,'w') as fd:
-        fd.write("{time},{val}".format(time=int(time.time()), val=value))
+    try:
+        with open(filepath,'w') as fd:
+            fd.write("{time},{val}".format(time=int(time.time()), val=value))
+    except:
+        pass
 
 def main():
     parser = argparse.ArgumentParser(description='Read seven-segment LCD display.')
