@@ -457,7 +457,7 @@ def read_segments(digit_img, segwidth, debug=False):
         seg_level.append( (seg.mean()/255) )
     return seg_level
     
-def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
+def calc_value(digit_levels, segthresh, minval=0, maxval=0):
     """
     Given intensity levels of all segments, calculate most likely value
     per digit for the whole number.
@@ -528,8 +528,8 @@ def calc_value(digit_levels, segthresh, minval=0, maxinc=None):
         prob = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
         logging.debug("Found candidate value {} with distance {:.4}...".format(cand, prob))
         
-        # Check if candidate number satisfies numerical constraints
-        if (cand >= minval and (not maxinc or cand < (minval + maxinc))):
+        # Check if candidate number satisfies numerical constraints.
+        if (cand >= minval and (maxval==0 or cand <= maxval)):
             return cand, prob
 
         # Candidate was not ok, update next most probable digit and retry
@@ -654,6 +654,25 @@ def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smartho
         logging.warn("Could not update meter reading: {}".format(inst))
         pass
 
+def get_last_val(filepath):
+    """
+    Get last stored value and timestamp from file. Ignore failure here, 
+    just return 0
+    """
+    try:
+        with open(filepath,'r') as fd:
+            lasttime,lastval = fd.read().split(',')
+            return int(lasttime),float(lastval)
+    except:
+        return 0,0
+
+def set_last_val(value, filepath):
+    """
+    Set last value and timestamp to file
+    """
+    with open(filepath,'w') as fd:
+        fd.write("{time},{val}".format(time=int(time.time()), val=value))
+
 def main():
     parser = argparse.ArgumentParser(description='Read seven-segment LCD display.')
     parser.add_argument('--ndigit', type=int, metavar='N', required=True,
@@ -675,8 +694,10 @@ def main():
 
     parser.add_argument('--minval', type=int, default=0, metavar='N',
                         help='minimum value to accept (e.g. for incrementing counters)')
-    parser.add_argument('--maxincrease', type=int, default=None, metavar='N',
+    parser.add_argument('--maxincrease', type=int, default=0, metavar='N',
                         help='maximum increase to accept (e.g. for incrementing counters)')
+    parser.add_argument('--lastvalfile', type=str, default=None, metavar='file',
+                        help='file to keep track of last value, required for maxincrease')
 
     parser.add_argument('--domoticz', type=str, metavar=("protocol","ip","port", "idx"), default=None,
                         nargs=4, help='Push to domoticz: protocol (http/https), ip, port, and meter idx, e.g. "https 127.0.0.1 10443 24')
@@ -734,7 +755,9 @@ def main():
         img_norm, img_thresh = preproc_img(im_path, img_data, roi=args.roi, rotate=args.rotate, store_crop=args.store_crop, debug=args.debug)
         lcd_digit_levels = read_digits(img_thresh, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
         
-        lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxinc=args.maxincrease)
+        lastvaltime, lastval = get_last_val(args.lastvalfile)
+        lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxval=lastval+args.maxincrease)
+        set_last_val(lcd_value, args.lastvalfile)
 
         print("Found: {}, {}".format(lcd_value, lcd_probability))
         if (args.domoticz != None):
