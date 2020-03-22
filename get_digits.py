@@ -698,7 +698,7 @@ def main():
                         help='store cropped, normalized image (e.g. for longer-term debugging)')
 
     parser.add_argument('--minval', type=int, default=0, metavar='N',
-                        help='minimum value to accept (e.g. for incrementing counters)')
+                        help='minimum value to accept (e.g. for incrementing counters). Set to -1 to use value in lastvalfile (if set)')
     parser.add_argument('--maxincrease', type=int, default=0, metavar='N',
                         help='maximum increase to accept (e.g. for incrementing counters)')
     parser.add_argument('--lastvalfile', type=str, default=None, metavar='file',
@@ -761,6 +761,8 @@ def main():
         lcd_digit_levels = read_digits(img_thresh, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
         
         lastvaltime, lastval = get_last_val(args.lastvalfile)
+        if (args.minval == -1):
+            args.minva = lastval
         lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxval=lastval+args.maxincrease)
         set_last_val(lcd_value, args.lastvalfile)
 
