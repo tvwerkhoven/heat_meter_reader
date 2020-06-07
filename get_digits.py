@@ -27,8 +27,28 @@ from datetime import datetime
 import time
 import argparse
 import logging
+import logging.handlers
 
 # from IPython import embed;
+
+# Set up logging
+
+# Init logger
+# https://docs.python.org/3/howto/logging.html#configuring-logging
+my_logger = logging.getLogger("MyLogger")
+my_logger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+handler_stream = logging.StreamHandler()
+handler_stream.setLevel(logging.DEBUG)
+my_logger.addHandler(handler_stream)
+
+# create syslog handler which also shows filename in log
+handler_syslog = logging.handlers.SysLogHandler(address = '/dev/log')
+formatter = logging.Formatter('%(filename)s: %(message)s')
+handler_syslog.setFormatter(formatter)
+handler_syslog.setLevel(logging.INFO)
+my_logger.addHandler(handler_syslog)
 
 
 # Python2/3 compatibility
@@ -749,27 +769,7 @@ def main():
     # Pre-process command-line arguments
     args = parser.parse_args()
 
-    # Set up logging
-
-    # Init logger
-    # https://docs.python.org/3/howto/logging.html#configuring-logging
-    my_logger = logging.getLogger("MyLogger")
-    my_logger.setLevel(logging.DEBUG)
-
-    # create console handler and set level to debug
-    handler_stream = logging.StreamHandler()
-    handler_stream.setLevel(logging.DEBUG)
-    my_logger.addHandler(handler_stream)
-
-    # create syslog handler which also shows filename in log
-    handler_syslog = logging.handlers.SysLogHandler(address = '/dev/log')
-    formatter = logging.Formatter('%(filename)s: %(message)s')
-    handler_syslog.setFormatter(formatter)
-    handler_syslog.setLevel(logging.INFO)
-    my_logger.addHandler(handler_syslog)
-
-    if (args.debug):
-        print (args)
+    my_logger.debug(args)
 
     # Check if path exists. args.store_crop is either None or a string
     if (args.store_crop and (not os.path.exists(args.store_crop))):
