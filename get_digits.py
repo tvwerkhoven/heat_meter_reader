@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # coding=utf-8
 #
 # Read digital seven-segment lcd screen and update this as heat meter. The 
