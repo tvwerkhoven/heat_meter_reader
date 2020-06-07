@@ -246,20 +246,21 @@ def calibrate_image(im_path, ndigit, rotate=None, roi=None, digwidth=None, segwi
             segthresh = seg_thresh_tmp
             opt_str += "--segthresh {} ".format(seg_thresh_str)
 
-    if (input("Try to maximize k-means avg through digit and segment width? y/n") == "y"):
-        digwidth_arr = np.arange(digwidth*0.9, digwidth*1.1, dtype=int)
-        segwidth_arr = np.arange(segwidth*0.8, segwidth*1.2, dtype=int)
-        # print(digwidth_arr)
-        # print(segwidth_arr)
-        # For a series of digit width and segment widths, calculate segment 
-        # filling delta between ON and OFF segments. This should be as high 
-        # as possible.
-        # NB this assumes the kMeans division above succeeded!
-        # NB this only gives results for current image
-        kmean_mat = [[np.r_[read_digits(img_thresh, ndigit, dw, sw)].flatten()[np.argwhere(C==0)].mean()-np.r_[read_digits(img_thresh, ndigit, dw, sw)].flatten()[np.argwhere(C==1)].mean() for dw in digwidth_arr] for sw in segwidth_arr]
-        #kmean_mat = [[kMeans(np.r_[read_digits(img_thresh, ndigit, dw, sw)].flatten(), K=2)[0].ptp() for dw in digwidth_arr] for sw in segwidth_arr]
-        # print(kmean_mat)
-        plt.imshow(kmean_mat, extent=[digwidth_arr.min()-0.5, digwidth_arr.max()+0.5, segwidth_arr.min()-0.5, segwidth_arr.max()+0.5])
+    # Broken code, didn't work well in the first place tho
+    # if (input("Try to maximize k-means avg through digit and segment width? y/n") == "y"):
+    #     digwidth_arr = np.arange(digwidth*0.9, digwidth*1.1, dtype=int)
+    #     segwidth_arr = np.arange(segwidth*0.8, segwidth*1.2, dtype=int)
+    #     # print(digwidth_arr)
+    #     # print(segwidth_arr)
+    #     # For a series of digit width and segment widths, calculate segment 
+    #     # filling delta between ON and OFF segments. This should be as high 
+    #     # as possible.
+    #     # NB this assumes the kMeans division above succeeded!
+    #     # NB this only gives results for current image
+    #     kmean_mat = [[np.r_[read_digits(img_thresh, ndigit, dw, sw)].flatten()[np.argwhere(C==0)].mean()-np.r_[read_digits(img_thresh, ndigit, dw, sw)].flatten()[np.argwhere(C==1)].mean() for dw in digwidth_arr] for sw in segwidth_arr]
+    #     #kmean_mat = [[kMeans(np.r_[read_digits(img_thresh, ndigit, dw, sw)].flatten(), K=2)[0].ptp() for dw in digwidth_arr] for sw in segwidth_arr]
+    #     # print(kmean_mat)
+    #     plt.imshow(kmean_mat, extent=[digwidth_arr.min()-0.5, digwidth_arr.max()+0.5, segwidth_arr.min()-0.5, segwidth_arr.max()+0.5])
 
     lcd_digit_levels = read_digits(img_thresh, ndigit, digwidth, segwidth, debug)
     lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh)
