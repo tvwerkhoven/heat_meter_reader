@@ -55,7 +55,6 @@ handler_syslog.setFormatter(formatter)
 handler_syslog.setLevel(logging.INFO)
 my_logger.addHandler(handler_syslog)
 
-
 # Python2/3 compatibility
 try:
    input = raw_input
@@ -814,8 +813,13 @@ def main():
         lcd_digit_levels = read_digits(img_thresh, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
         
         lastvaltime, lastval = get_last_val(args.lastvalfile)
+        # If minval is -1, use last value we got as minimum. If file does not 
+        # exist this is zero which is ok for most meters
         if (args.minval == -1):
             args.minval = lastval
+        # If file does not exist, do not use maxval (=set to zero)
+        if (lastval == 0):
+            args.maxincrease = 0 
         lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxval=lastval+args.maxincrease)
         set_last_val(lcd_value, args.lastvalfile)
 
