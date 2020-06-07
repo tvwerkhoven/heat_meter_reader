@@ -672,8 +672,8 @@ def mqtt_update(value, ip, port, user, passwd, topic):
     client1 = paho.Client(client_id="heat_meter")
     client1.username_pw_set(user, passwd)
 
-    client1.connect(ip,port)
-    ret = client1.publish(topic,value)
+    client1.connect(ip,int(port))
+    ret = client1.publish(topic, value)
 
 
 def get_last_val(filepath):
