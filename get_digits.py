@@ -535,7 +535,7 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
             return cand, prob
 
         # Candidate was not ok, update next most probable digit and retry
-        logging.warning("Skipping candidate value {} with distance {:.4}...".format(cand, prob))
+        my_logger.warning("Skipping candidate value {} with distance {:.4}...".format(cand, prob))
         cand_id[cand_id_next[0][off+ndigit]] = cand_id_next[1][off+ndigit]
     
     # If we exit the loop above we found no match that satisfies numerical 
@@ -544,13 +544,13 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
     cand_id = ndigit*[0]
     cand0 = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
     prob0 = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
-    logging.warning("Could not satisfy range constraints, returning most likely result {}...".format(cand0))
+    my_logger.warning("Could not satisfy range constraints, returning most likely result {}...".format(cand0))
     return cand0, prob0
 
 def domoticz_init(ip, port, meter_idx, prot="http"):
     # Get current water meter reading from domoticz, return meter_count_l
 
-    logging.debug("Get meter {} reading from domoticz".format(meter_idx))
+    my_logger.debug("Get meter {} reading from domoticz".format(meter_idx))
     
     # E.g. https://127.0.0.1:10443/json.htm?type=devices&rid=
     req_url = "{}://{}:{}/json.htm?type=devices&rid={}".format(prot, ip, port, meter_idx)
@@ -558,10 +558,10 @@ def domoticz_init(ip, port, meter_idx, prot="http"):
     try:
         resp = requests.get(req_url, verify=False, timeout=5)
     except requests.exceptions.Timeout as inst:
-        logging.error("Could not get current meter reading due to timeout: {}, failing".format(inst))
+        my_logger.error("Could not get current meter reading due to timeout: {}, failing".format(inst))
         raise
     except Exception as inst:
-        logging.error("Could not get current meter reading: {}".format(inst))
+        my_logger.error("Could not get current meter reading: {}".format(inst))
         return 0,0,datetime.now()-datetime.now()
 
     # Get meter offset ('AddjValue'), given as float
@@ -581,7 +581,7 @@ def domoticz_init(ip, port, meter_idx, prot="http"):
     last_t = datetime.strptime(last_str, '%Y-%m-%d %H:%M:%S')
     last_delay = datetime.now() - last_t
 
-    logging.info("Meter {}: counter={}, offset={}, delay={}".format(meter_idx, count_l, offset_l, last_delay))
+    my_logger.info("Meter {}: counter={}, offset={}, delay={}".format(meter_idx, count_l, offset_l, last_delay))
     return offset_l, count_l, last_delay
 
 def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None):
@@ -602,19 +602,19 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
 
     # Do not update domoticz below 10 units because of domoticz resolution being too small, causing flip flopping updates
     if (upd_val_millim3 < 10):
-        logging.info("Not updating meter {}, value {} too small for domoticz resolution.".format(m_idx, upd_val_millim3))
+        my_logger.info("Not updating meter {}, value {} too small for domoticz resolution.".format(m_idx, upd_val_millim3))
     # Rate limit to max 2 GJ/day = 25000 millim^3/day to prevent wrong reads = val_MJ > 1000*m_delay.total_seconds()/3600/24
     elif (upd_val_millim3 > 25000*m_delay.total_seconds()/3600/24):
-        logging.info("Not updating meter {}, value {} > {}.".format(m_idx, upd_val_millim3, 25000*m_delay.total_seconds()/3600/24))
+        my_logger.info("Not updating meter {}, value {} > {}.".format(m_idx, upd_val_millim3, 25000*m_delay.total_seconds()/3600/24))
     else:
         req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={}".format(prot, ip,port, m_idx, int(upd_val_millim3))
-        logging.info("Updating meter {} to value {}".format(m_idx, upd_val_millim3))
+        my_logger.info("Updating meter {} to value {}".format(m_idx, upd_val_millim3))
         try:
             httpresponse = requests.get(req_url, verify=False, timeout=5)
         except requests.exceptions.Timeout as inst:
-            logging.warn("Could not update meter reading due to timeout: {}, failing".format(inst))
+            my_logger.warn("Could not update meter reading due to timeout: {}, failing".format(inst))
         except Exception as inst:
-            logging.error("Could not update meter reading: {}".format(inst))
+            my_logger.error("Could not update meter reading: {}".format(inst))
 
     ## Update power in kWh and W
     ## This does not work (yet) because domoticz JSON api does not print in 
@@ -631,7 +631,7 @@ def domoticz_update(value, prot='https', ip='127.0.0.1', port='443', m_idx=None)
     # upd_val_power = int(3600 * (val_Wh - m_count) / m_delay.total_seconds())
 
     # req_url = "{}://{}:{}/json.htm?type=command&param=udevice&idx={}&svalue={};{}".format(prot, ip,port, m_idx, int(upd_val_power), int(upd_val_Wh))
-    # logging.info("Updating meter {} to value {};{}".format(m_idx, upd_val_power, upd_val_Wh))
+    # my_logger.info("Updating meter {} to value {};{}".format(m_idx, upd_val_power, upd_val_Wh))
     # httpresponse = requests.get(req_url, verify=False, timeout=5)
 
 def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smarthome", query="energy,type=heat,device=landisgyr value="):
@@ -649,12 +649,12 @@ def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smartho
     # Alternatively, like post_data = "energy landisgyr=10"
     post_data = "{}{:d}".format(query, int(value_joule))
 
-    logging.info("Pushing data '{}' to influxdb".format(post_data))
+    my_logger.info("Pushing data '{}' to influxdb".format(post_data))
 
     try:
         httpresponse = requests.post(req_url, data=post_data, verify=False, timeout=5)
     except Exception as inst:
-        logging.warn("Could not update meter reading: {}".format(inst))
+        my_logger.warn("Could not update meter reading: {}".format(inst))
         pass
 
 import paho.mqtt.client as paho
@@ -750,23 +750,44 @@ def main():
 
     # Pre-process command-line arguments
     args = parser.parse_args()
-    logging.basicConfig(filename=args.logfile, level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s')
-    # define a Handler which writes INFO messages or higher to the sys.stderr
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    # set a format which is simpler for console use
-    formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-    # tell the handler to use this format
-    console.setFormatter(formatter)
-    # add the handler to the root logger
-    logging.getLogger('').addHandler(console)
+
+    # Set up logging
+
+    # Init logger
+    # https://docs.python.org/3/howto/logging.html#configuring-logging
+    my_logger = logging.getLogger("MyLogger")
+    my_logger.setLevel(logging.DEBUG)
+
+    # create console handler and set level to debug
+    handler_stream = logging.StreamHandler()
+    handler_stream.setLevel(logging.DEBUG)
+    my_logger.addHandler(handler_stream)
+
+    # create syslog handler which also shows filename in log
+    handler_syslog = logging.handlers.SysLogHandler(address = '/dev/log')
+    formatter = logging.Formatter('%(filename)s: %(message)s')
+    handler_syslog.setFormatter(formatter)
+    handler_syslog.setLevel(logging.INFO)
+    my_logger.addHandler(handler_syslog)
+
+
+    # logging.basicConfig(filename=args.logfile, level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s')
+    # # define a Handler which writes INFO messages or higher to the sys.stderr
+    # console = logging.StreamHandler()
+    # console.setLevel(logging.DEBUG)
+    # # set a format which is simpler for console use
+    # formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
+    # # tell the handler to use this format
+    # console.setFormatter(formatter)
+    # # add the handler to the root logger
+    # logging.getLogger('').addHandler(console)
 
     if (args.debug):
         print (args)
 
     # Check if path exists. args.store_crop is either None or a string
     if (args.store_crop and (not os.path.exists(args.store_crop))):
-        logging.warn("Store crop path does not exist, disabling.")
+        my_logger.warn("Store crop path does not exist, disabling.")
         args.store_crop = None
 
     if (not args.calibrate):
@@ -783,7 +804,7 @@ def main():
             try:
                 im_path, img_data = capture_img(method='file')
             except:
-                logging.error("Could not acquire image, aborting")
+                my_logger.error("Could not acquire image, aborting")
                 return
 
         opt_str = calibrate_image(im_path, rotate=args.rotate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, segthresh=args.segthresh, debug=args.debug)
@@ -795,7 +816,7 @@ def main():
             try:
                 im_path, img_data = capture_img(method='data')
             except:
-                logging.error("Could not acquire image, aborting")
+                my_logger.error("Could not acquire image, aborting")
                 return
 
         img_norm, img_thresh = preproc_img(im_path, img_data, roi=args.roi, rotate=args.rotate, store_crop=args.store_crop, debug=args.debug)
@@ -807,7 +828,7 @@ def main():
         lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxval=lastval+args.maxincrease)
         set_last_val(lcd_value, args.lastvalfile)
 
-        logging.info("Found: {}, {}".format(lcd_value, lcd_probability))
+        my_logger.info("Found: {}, {}".format(lcd_value, lcd_probability))
         if (args.domoticz != None):
             domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], m_idx=args.domoticz[3])
         if (args.influxdb != None):
