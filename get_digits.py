@@ -38,10 +38,15 @@ import logging.handlers
 my_logger = logging.getLogger("MyLogger")
 my_logger.setLevel(logging.DEBUG)
 
+# Somehow the default console logger is already created. Not sure why.
+# my_logger.propagate = False
+# logging.disabled = True 
+# logging.disable(logging.CRITICAL)
+
 # create console handler and set level to debug
-handler_stream = logging.StreamHandler()
-handler_stream.setLevel(logging.DEBUG)
-my_logger.addHandler(handler_stream)
+# handler_stream = logging.StreamHandler()
+# handler_stream.setLevel(logging.DEBUG)
+# my_logger.addHandler(handler_stream)
 
 # create syslog handler which also shows filename in log
 handler_syslog = logging.handlers.SysLogHandler(address = '/dev/log')
