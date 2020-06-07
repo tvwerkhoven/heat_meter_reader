@@ -308,7 +308,7 @@ def capture_img(delay=2, method='data'):
 
 def preproc_img(imgpath, image, roi, rotate=None, store_crop=False, debug=False):
     logging.debug("Pre-processing image")
-    # Read image from disk, select ROI, convert to grayscale
+    # Read image from disk if path is given, then rotate, select ROI, convert to grayscale
     if (not imgpath == None):
         image = cv2.imread(imgpath)
 
@@ -529,7 +529,8 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
         prob = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
         logging.debug("Found candidate value {} with distance {:.4}...".format(cand, prob))
         
-        # Check if candidate number satisfies numerical constraints.
+        # Check if candidate number satisfies numerical constraints, but only 
+        # if maxval is not zero.
         if (cand >= minval and (maxval==0 or cand <= maxval)):
             return cand, prob
 
@@ -772,7 +773,7 @@ def main():
         
         lastvaltime, lastval = get_last_val(args.lastvalfile)
         if (args.minval == -1):
-            args.minva = lastval
+            args.minval = lastval
         lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxval=lastval+args.maxincrease)
         set_last_val(lcd_value, args.lastvalfile)
 
