@@ -683,7 +683,7 @@ def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smartho
         my_logger.warn("Could not update meter reading: {}".format(inst))
         pass
 
-def mqtt_update(value, ip, port, user, passwd, topic):
+def mqtt_update(payload, ip, port, user, passwd, topic):
     """
     Publish to mqtt
 
@@ -696,8 +696,15 @@ def mqtt_update(value, ip, port, user, passwd, topic):
     client1 = paho.Client(client_id="heat_meter")
     client1.username_pw_set(user, passwd)
 
-    client1.connect(ip,int(port))
-    ret = client1.publish(topic, value)
+    try:
+        client1.connect(ip,int(port))
+    except:
+        my_logger.exception('Could not connect to mqtt broker')
+
+    try:
+        ret = client1.publish(topic, payload)
+    except:
+        my_logger.exception('Could not publish mqtt value')
 
 
 def get_last_val(filepath):
