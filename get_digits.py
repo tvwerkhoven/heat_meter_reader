@@ -743,8 +743,6 @@ def main():
     parser.add_argument('--input', type=str, metavar='path', nargs="?",
                         help='image input, either "live" for camera image or a path for an image file')
 
-    parser.add_argument('--logfile', type=str, metavar='path',
-                        help='log stuff here')
     parser.add_argument('--debug', action='store_true',
                         help='show debug output during prep_proc calibration')
 
@@ -769,18 +767,6 @@ def main():
     handler_syslog.setFormatter(formatter)
     handler_syslog.setLevel(logging.INFO)
     my_logger.addHandler(handler_syslog)
-
-
-    # logging.basicConfig(filename=args.logfile, level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s')
-    # # define a Handler which writes INFO messages or higher to the sys.stderr
-    # console = logging.StreamHandler()
-    # console.setLevel(logging.DEBUG)
-    # # set a format which is simpler for console use
-    # formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-    # # tell the handler to use this format
-    # console.setFormatter(formatter)
-    # # add the handler to the root logger
-    # logging.getLogger('').addHandler(console)
 
     if (args.debug):
         print (args)
