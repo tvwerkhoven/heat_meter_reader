@@ -20,6 +20,8 @@ import cv2
 import re
 import requests
 import numpy as np
+import paho.mqtt.client as paho
+
 
 from datetime import datetime
 import time
@@ -656,8 +658,6 @@ def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smartho
     except Exception as inst:
         my_logger.warn("Could not update meter reading: {}".format(inst))
         pass
-
-import paho.mqtt.client as paho
 
 def mqtt_update(value, ip, port, user, passwd, topic):
     """
