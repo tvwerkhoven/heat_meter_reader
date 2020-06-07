@@ -694,8 +694,8 @@ def main():
                         help='width of digit in pixels')
     parser.add_argument('--segwidth', type=int, metavar='W',
                         help='width of segment in pixels')
-    parser.add_argument('--segthresh', type=float, metavar='T', default=0.35,
-                        help='threshold value to consider segment filled or not, between 0 and 1')
+    parser.add_argument('--segthresh', type=float, metavar='T',
+                        help='threshold value to consider segment filled or not, between 0 and 1, 0.35 appears OK in my setup')
     parser.add_argument('--store_crop', type=str, metavar='storedir',
                         help='store cropped, normalized image (e.g. for longer-term debugging)')
 
@@ -714,8 +714,11 @@ def main():
                         appended with the measurement data, e.g. \
                         "https 127.0.0.1 8086 smarthome "energy,type=heat,device=landisgyr value=""')
 
-    parser.add_argument('--calibrate', type=str, metavar='camfile', nargs="?",
-                        help='calibrate parameters, either getting camera image directly (if possible), or using the referenced file')
+    # parser.add_argument('--calibrate', type=str, metavar='camfile', nargs="?",
+    parser.add_argument('--calibrate', action='store_true',
+                        help='run wizard and gui to calibrate parameters')
+    parser.add_argument('--input', type=str, metavar='path', nargs="?",
+                        help='image input, either "live" for camera image or a path for an image file')
 
     parser.add_argument('--logfile', type=str, metavar='path',
                         help='log stuff here')
@@ -752,21 +755,25 @@ def main():
 
     # Run main program, either in calibration mode or in analysis mode
     if (args.calibrate):
-        # Unset default for calibration -- 20200202 -- removed, not sure why we set this default
-        # args.segthresh = None
-        try:
-            im_path, img_data = capture_img(method='file')
-            opt_str = calibrate_image(im_path, rotate=args.rotate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, segthresh=args.segthresh, debug=args.debug)
-        except:
-            opt_str = calibrate_image(args.calibrate, rotate=args.rotate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, segthresh=args.segthresh, debug=args.debug)
+        im_path = args.input
+        if (args.input == "live"):
+            try:
+                im_path, img_data = capture_img(method='file')
+            except:
+                logging.error("Could not acquire image, aborting")
+                return
 
+        opt_str = calibrate_image(im_path, rotate=args.rotate, roi=args.roi, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, segthresh=args.segthresh, debug=args.debug)
         print("Calibrated args: {}".format(opt_str))
     else:
-        try:
-            im_path, img_data = capture_img(method='data')
-        except:
-            logging.error("Could not acquire image, aborting")
-            return
+        im_path = args.input
+        img_data = None
+        if (args.input == "live"):
+            try:
+                im_path, img_data = capture_img(method='data')
+            except:
+                logging.error("Could not acquire image, aborting")
+                return
 
         img_norm, img_thresh = preproc_img(im_path, img_data, roi=args.roi, rotate=args.rotate, store_crop=args.store_crop, debug=args.debug)
         lcd_digit_levels = read_digits(img_thresh, ndigit=args.ndigit, digwidth=args.digwidth, segwidth=args.segwidth, debug=args.debug)
