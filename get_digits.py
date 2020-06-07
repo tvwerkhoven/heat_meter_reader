@@ -657,6 +657,25 @@ def influxdb_update(value, prot='http', ip='127.0.0.1', port='8086', db="smartho
         logging.warn("Could not update meter reading: {}".format(inst))
         pass
 
+import paho.mqtt.client as paho
+
+def mqtt_update(value, ip, port, user, passwd, topic):
+    """
+    Publish to mqtt
+
+    http://www.steves-internet-guide.com/publishing-messages-mqtt-client/
+    https://pypi.org/project/paho-mqtt/#publishing
+    """
+    # broker="192.168.1.184"
+    # port=1883
+
+    client1 = paho.Client(client_id="heat_meter")
+    client1.username_pw_set(user, passwd)
+
+    client1.connect(ip,port)
+    ret = client1.publish(topic,value)
+
+
 def get_last_val(filepath):
     """
     Get last stored value and timestamp from file. Ignore failure here, 
@@ -713,6 +732,10 @@ def main():
                         ip, port, database, and query string which will be \
                         appended with the measurement data, e.g. \
                         "https 127.0.0.1 8086 smarthome "energy,type=heat,device=landisgyr value=""')
+    parser.add_argument('--mqtt', type=str, metavar=("ip","port","user","passwd","topic"), default=None,
+                        nargs=5, help='Push to mqtt broker: topic string will be \
+                        appended with the measurement data, e.g. \
+                        influxdb/energy/quantity/heat/source/landisgyr/value/state')
 
     # parser.add_argument('--calibrate', type=str, metavar='camfile', nargs="?",
     parser.add_argument('--calibrate', action='store_true',
@@ -789,6 +812,8 @@ def main():
             domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], m_idx=args.domoticz[3])
         if (args.influxdb != None):
             influxdb_update(lcd_value, prot=args.influxdb[0], ip=args.influxdb[1], port=args.influxdb[2], db=args.influxdb[3], query=args.influxdb[4])
+        if (args.mqtt != None):
+            mqtt_update(lcd_value, ip=args.mqtt[0], port=args.mqtt[1], user=args.mqtt[2], passwd=args.mqtt[3], topic=args.mqtt[4])
 
 
 if __name__ == "__main__":
