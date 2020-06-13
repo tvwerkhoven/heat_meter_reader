@@ -351,8 +351,14 @@ def preproc_img(imgpath, image, roi, rotate=None, store_crop=False, debug=False)
         plt.imshow(gray, origin='upper')
 
     # Normalize by dividing by a blurred version, use 90% of the height of 
-    # the image as kernel for this
-    blurred = cv2.GaussianBlur(gray, (int(warped.shape[0]*0.9), int(warped.shape[0]*0.9)), 0)
+    # the image as kernel for this. Ensure odd kernelsize
+    kernelsize = (int(warped.shape[0]*0.9), int(warped.shape[0]*0.9))
+    if (not kernelsize[0] % 2):
+        kernelsize = kernelsize[0]-1, kernelsize[1]
+    if (not kernelsize[1] % 2):
+        kernelsize = kernelsize[0], kernelsize[1]-1
+
+    blurred = cv2.GaussianBlur(gray, kernelsize, 0)
     norm = gray / blurred
     norm = cv2.normalize(norm, norm, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
