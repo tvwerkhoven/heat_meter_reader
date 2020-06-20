@@ -298,7 +298,7 @@ def calibrate_image(im_path, ndigit, rotate=None, roi=None, digwidth=None, segwi
 def capture_img(delay=2, method='data'):
     # Only import here, we don't have this lib on dev computer
     from picamera import PiCamera
-    logging.debug("Acquiring image, method={}...".format(method))
+    my_logger.debug("Acquiring image, method={}...".format(method))
 
     if (method == 'data'):
         # Create the in-memory stream
@@ -307,7 +307,7 @@ def capture_img(delay=2, method='data'):
             # TODO: how to run at native resolution?
             camera.resolution = (2592, 1944)
             camera.framerate = 15
-            logging.debug("Camera warming up {}s...".format(delay))
+            my_logger.debug("Camera warming up {}s...".format(delay))
             time.sleep(delay)
             camera.capture(stream, format='jpeg')
 
@@ -324,7 +324,7 @@ def capture_img(delay=2, method='data'):
         camera.resolution = (2592, 1944)
         camera.framerate = 15
 
-        logging.debug("Camera warming up {}s...".format(delay))
+        my_logger.debug("Camera warming up {}s...".format(delay))
         time.sleep(delay)
         #camera.awb_mode='off'
         #camera.exposure_mode = 'off'
@@ -333,7 +333,7 @@ def capture_img(delay=2, method='data'):
         return img_path, None
 
 def preproc_img(imgpath, image, roi, rotate=None, store_crop=False, debug=False):
-    logging.debug("Pre-processing image")
+    my_logger.debug("Pre-processing image")
     # Read image from disk if path is given, then rotate, select ROI, convert to grayscale
     if (not imgpath == None):
         image = cv2.imread(imgpath)
@@ -370,7 +370,7 @@ def preproc_img(imgpath, image, roi, rotate=None, store_crop=False, debug=False)
             fpath = os.path.join(store_crop, fname)
             cv2.imwrite(fpath, norm)
         except Exception as inst:
-            logging.warn("Could not store crop: {}".format(inst))
+            my_logger.warn("Could not store crop: {}".format(inst))
 
 
     if (debug):
@@ -411,7 +411,7 @@ def preproc_img(imgpath, image, roi, rotate=None, store_crop=False, debug=False)
     return norm, thresh2
 
 def read_digits(img, ndigit, digwidth, segwidth, debug=False):
-    logging.debug("Reading digits...")
+    my_logger.debug("Reading digits...")
     # img: pre-processed image
     # ndigit: number of digits (numbers) to extract
     # digwidth: width of one digit (without margin) in pixels
@@ -559,11 +559,12 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
         cand = sum([int(digit_candidates[i][c])*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
         # Probability of this total match
         prob = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
-        logging.debug("Found candidate value {} with distance {:.4}...".format(cand, prob))
+        my_logger.debug("Found candidate value {} with distance {:.4}...".format(cand, prob))
         
         # Check if candidate number satisfies numerical constraints, but only 
         # if maxval is not zero.
         if (cand >= minval and (maxval==0 or cand <= maxval)):
+            my_logger.debug("Found value {} with distance {:.4} matching conditions...".format(cand, prob))
             return cand, prob
 
         # Candidate was not ok, update next most probable digit and retry
