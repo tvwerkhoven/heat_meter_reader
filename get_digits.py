@@ -578,7 +578,8 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
     cand0 = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
     prob0 = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
     my_logger.warning("Could not satisfy range constraints, returning most likely result {}...".format(cand0))
-    return cand0, prob0
+    return None, None
+    # return cand0, prob0
 
 def domoticz_init(ip, port, meter_idx, prot="http"):
     # Get current water meter reading from domoticz, return meter_count_l
@@ -835,15 +836,17 @@ def main():
         if (lastval == 0):
             args.maxincrease = 0 
         lcd_value, lcd_probability = calc_value(lcd_digit_levels, segthresh=args.segthresh, minval=args.minval, maxval=lastval+args.maxincrease)
-        set_last_val(lcd_value, args.lastvalfile)
 
-        my_logger.info("Found: {}, {}".format(lcd_value, lcd_probability))
-        if (args.domoticz != None):
-            domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], m_idx=args.domoticz[3])
-        if (args.influxdb != None):
-            influxdb_update(lcd_value, prot=args.influxdb[0], ip=args.influxdb[1], port=args.influxdb[2], db=args.influxdb[3], query=args.influxdb[4])
-        if (args.mqtt != None):
-            mqtt_update(lcd_value, ip=args.mqtt[0], port=args.mqtt[1], user=args.mqtt[2], passwd=args.mqtt[3], topic=args.mqtt[4])
+        # Only continue if we have a valid result (i.e. one that obeys minval/maxval)
+        if (lcd_value):
+            set_last_val(lcd_value, args.lastvalfile)
+
+            if (args.domoticz != None):
+                domoticz_update(lcd_value, prot=args.domoticz[0], ip=args.domoticz[1], port=args.domoticz[2], m_idx=args.domoticz[3])
+            if (args.influxdb != None):
+                influxdb_update(lcd_value, prot=args.influxdb[0], ip=args.influxdb[1], port=args.influxdb[2], db=args.influxdb[3], query=args.influxdb[4])
+            if (args.mqtt != None):
+                mqtt_update(lcd_value, ip=args.mqtt[0], port=args.mqtt[1], user=args.mqtt[2], passwd=args.mqtt[3], topic=args.mqtt[4])
 
 
 if __name__ == "__main__":
