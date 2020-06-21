@@ -568,7 +568,7 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
             return cand, prob
 
         # Candidate was not ok, update next most probable digit and retry
-        my_logger.warning("Skipping candidate value {} with distance {:.4}...".format(cand, prob))
+        # my_logger.warning("Skipping candidate value {} with distance {:.4}...".format(cand, prob))
         cand_id[cand_id_next[0][off+ndigit]] = cand_id_next[1][off+ndigit]
     
     # If we exit the loop above we found no match that satisfies numerical 
@@ -577,7 +577,7 @@ def calc_value(digit_levels, segthresh, minval=0, maxval=0):
     cand_id = ndigit*[0]
     cand0 = sum([digit_candidates[i][c]*10**(ndigit-i-1) for i, c in enumerate(cand_id)])
     prob0 = sum([digit_dist[i][c] for i, c in enumerate(cand_id)])
-    my_logger.warning("Could not satisfy range constraints, returning most likely result {}...".format(cand0))
+    my_logger.warning("Could not satisfy range constraints, giving up.")
     return None, None
     # return cand0, prob0
 
