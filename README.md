@@ -76,7 +76,12 @@ Get paramters:
 
 Not covered here
 
-curl -G 'http://localhost:8086/query?db=smarthome' --data-urlencode 'q=DELETE FROM energyv2 WHERE time=\'$i\''
+### Delete data points
+
+To delete erroneous data from influxdb, use the timestamp as semi-unique identifier. Note that this will also delete other measurements taken at the identical time! Alternatively, overwrite the value with something more sensical if this is a problem.
+
+	SELECT * FROM energyv3 WHERE time=\'$i\'
+	curl -G 'http://localhost:8086/query?db=smarthome' --data-urlencode 'q=DELETE FROM energyv3 WHERE time=\'$i\''
 
 ### Run script
 
