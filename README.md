@@ -44,6 +44,8 @@ or if you want to calibrate on an image taken previously
     raspistill --datetime -v -o cam_%d.jpg -t 0
     ./get_digits.py --rotate 180 --ndigit 7 --calibrate cam_*.jpg
 
+or using esp32/home-assistant integration, see heatmeter.sh
+
 Get paramters:
     --roi 761 907 1494 901 1502 748 784 744
     --digwidth 80
